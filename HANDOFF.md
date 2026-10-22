@@ -1,5 +1,18 @@
 # F24 MCU CAN FD device handoff
 
+## Linear CRC Flash traversal (2026-10-22)
+
+sw_crc32.c matches F13/Classical/FD:integer-address increment before far cast
+preserves carry across64KiB. CRC/FD/RXMB/IRQ/RFD/Flash contracts unchanged.
+Boot1.2.1/build20261022 clean0errors/2existing warnings,end1DC1/spare574;
+App clean0/5,4756bytes/CRC2244D36A. App identity unchanged;generated minimum
+Boot follows the paired release. Combined installation images refreshed.
+Native109CRC checks,strict-C90 target carry and rejected unsafe-pointer
+mutation PASS;9artifact checks,compact512capture HAL/IRQ/vector tests and
+actual Tool/parser/RAM models PASS. No standalone Transfer/host/Tool runtime
+rebuild or physical Flash/COM test. Timing BINs unchanged;MD/web/PDF sync
+recorded in Tool HANDOFF. Earlier hardware evidence is a separate baseline.
+
 ## Normal hardware acceptance / source publication (2026-10-20)
 
 User130843 confirms initial Boot-mode update;133221 confirms Discover App->

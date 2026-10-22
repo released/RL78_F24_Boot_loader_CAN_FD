@@ -72,3 +72,6 @@
   No COM/flashing/power tests without scope/authorization. Report NOT RUN.
 - Sync related Tool MD/web/PDF when changing behavior. Preserve unrelated
   project outputs; App-only configuration must not rewrite Boot images.
+- CRC traversal uses integer-address carry across 64 KiB, not far-pointer
+  increments. Keep the three device CRC sources identical and run the Tool
+  test_device_crc_boundary.ps1 native/CC-RL assembly checks after CRC edits.

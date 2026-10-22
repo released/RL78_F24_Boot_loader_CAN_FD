@@ -93,7 +93,7 @@
  * The producer writes this Boot version as the App's minimum Boot version.
  * A newer minimum is rejected by an older Boot; build dates need not match.
  */
-#define IMAGE_BOOT_VERSION            (0x00010200UL)
-#define IMAGE_BOOT_BUILD              (20261020UL)
+#define IMAGE_BOOT_VERSION            (0x00010201UL)
+#define IMAGE_BOOT_BUILD              (20261022UL)
 
 #endif

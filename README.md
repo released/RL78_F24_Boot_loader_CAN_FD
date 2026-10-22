@@ -25,6 +25,10 @@ The actual transceiver supply, standby and wiring follow the fitted hardware.
 
 ## Flash and image contract
 
+Full-image CRC reads use 32-bit byte-address arithmetic across 64 KiB Flash
+boundaries. See the [CRC address reference](https://released.github.io/slide_boot_loader_for_RL78/#image-crc-linear-address)
+for image ranges, trailer addresses and porting checks.
+
 | Address | Purpose |
 | --- | --- |
 | 0x0000..0x1FFF | Boot,physical vectors and options |

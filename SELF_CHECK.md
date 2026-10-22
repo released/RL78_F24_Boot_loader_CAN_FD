@@ -1,5 +1,14 @@
 # CAN FD verification gates
 
+### CRC64KiB address carry (2026-10-22)
+
+- [x] Three identical CRC sources;109native boundary/BIN checks and strict-C90
+  target carry/reload checks;compiled unsafe pointer mutation rejected.
+- [x] Boot/App clean0errors;spare574;9artifact/negative guards,512capture HAL/
+  IRQ/vector checks and actual Tool/parser/RAM models PASS. App identity kept.
+- [x] Generated minimum-Boot/CRC/combined images updated;Transfer unchanged.
+- [ ] Physical cross64KiB Flash update/reset/APP_READY NOT RUN.
+
 ### Source publication / portable generation
 
 - [x] Three MTPJ generator records use local names/relative output folder;
