@@ -22,13 +22,7 @@
       <TreeImageGuid>03cad1e8-2eb3-4cde-a8a3-982423631122</TreeImageGuid>
       <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
     </Instance>
-    <Instance Guid="809e87c3-9188-4113-8f04-518893d73192">
-      <Name>boot_main.c</Name>
-      <Type>File</Type>
-      <RelativePath>boot_main.c</RelativePath>
-      <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
-      <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
-    </Instance>
+    
     <Instance Guid="dbae1732-957c-4477-ba73-515b1d29da60">
       <Name>can_boot_transport.c</Name>
       <Type>File</Type>
@@ -652,7 +646,13 @@
       <RelativePath>common\device_app_vectors.h</RelativePath>
       <TreeImageGuid>03cad1e8-2eb3-4cde-a8a3-982423631122</TreeImageGuid>
       <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
-    </Instance></Class>
+    </Instance>
+<Instance Guid="f22df82d-13fd-4b27-8497-6b2e994b238c"><Name>main.c</Name><Type>File</Type><RelativePath>main.c</RelativePath><TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid><ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem></Instance>
+
+<Instance Guid="82fa12c6-7536-48b7-b8c0-23d1af4976f8"><Name>custom_func.c</Name><Type>File</Type><RelativePath>custom_func.c</RelativePath><TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid><ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem></Instance>
+
+<Instance Guid="d1b521e4-41eb-44e1-8dfa-32aae0e89d67"><Name>custom_func.h</Name><Type>File</Type><RelativePath>custom_func.h</RelativePath><TreeImageGuid>03cad1e8-2eb3-4cde-a8a3-982423631122</TreeImageGuid><ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem></Instance>
+</Class>
   <Class Guid="fb98844b-2c27-4275-9804-f6e63e204da0">
     <Instance Guid="fb98844b-2c27-4275-9804-f6e63e204da0">
       <TypeOfStorageOfUserSettings>UserMtudFile</TypeOfStorageOfUserSettings>

@@ -175,3 +175,11 @@ if($Kind -eq 'app'){
 [IO.File]::WriteAllText($hex,$hexText,[Text.Encoding]::ASCII)
 if($Kind -eq 'app') { Write-AppBuildReport -Project $Project -ImagePath (Join-Path $build ($stem+'_update.bin')) }
 Write-Host ('PASS: '+($report | ConvertTo-Json -Compress))
+
+# APP_TIMING_BINS_BEGIN
+if($Kind -eq 'app') {
+    $LASTEXITCODE=0
+    & (Join-Path $Project 'generate_test_bins.ps1') -ProjectRoot $Project -Automatic
+    if($LASTEXITCODE -ne 0){throw 'App timing BIN generation failed.'}
+}
+# APP_TIMING_BINS_END

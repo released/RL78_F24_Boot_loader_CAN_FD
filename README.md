@@ -117,3 +117,12 @@ identity confirmation. The checked update has zero Host error-counter increases
 and a running UART counter. Long stress,queue-full and power/fault recovery
 remain separate acceptance items.
 See HANDOFF.md and SELF_CHECK.md for measured local results.
+
+## User code entry
+
+`custom_func.c` provides `hardware_init()` for initialization and `loop()` for
+foreground service. Add application initialization and foreground work through
+these callbacks, retaining the existing communication service calls.
+The selected main/startup adapter owns entry and handoff. Generated peripheral
+files remain under `src/`; retain the project's MTPJ source selection when using
+Code Generator or Smart Configurator, then rebuild to validate the image and vectors.
