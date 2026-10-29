@@ -13,7 +13,7 @@ $output=Join-Path $PSScriptRoot 'tmp\tests'
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $arguments=@('/nologo','/std:c++17','/W4','/WX','/EHsc',('/I'+$PSScriptRoot),('/Fe'+(Join-Path $output 'device_contract_tests.exe')))
 $sources=@((Join-Path $PSScriptRoot 'tools\tests\device_contract_tests.cpp'),
-    (Join-Path $PSScriptRoot 'image_metadata.c'),(Join-Path $PSScriptRoot 'image_metadata_profile.c'))
+    (Join-Path $PSScriptRoot 'hal\image\image_metadata.c'),(Join-Path $PSScriptRoot 'hal\image\image_metadata_profile.c'))
 if($ToolProject){
     $core=Join-Path (Resolve-Path -LiteralPath $ToolProject).Path 'src\core'
     $arguments+=@('/DF24_TEST_TOOL',('/I'+$core))
@@ -38,16 +38,16 @@ try {
 #endif
 '@,(New-Object Text.UTF8Encoding($false)))
     foreach($profile in @('BOOT','APP')) {
-        $settings=if($profile -eq 'APP'){Join-Path $PSScriptRoot '..\RL78_F24_Boot_loader_CAN_FD_app\src\smc_gen\r_config'}else{Join-Path $PSScriptRoot 'src\smc_gen\r_config'}
-        & cl /nologo /EP ("/DF24_DEVICE_"+$profile) ('/I'+(Join-Path $PSScriptRoot 'common')) ('/I'+$settings) $probe | Out-Null
+        $settings=if($profile -eq 'APP'){Join-Path $PSScriptRoot 'src\smc_gen\r_config'}else{Join-Path $PSScriptRoot 'src\smc_gen\r_config'}
+        & cl /nologo /EP ("/DF24_DEVICE_"+$profile) ('/I'+(Join-Path $PSScriptRoot 'hal\device')) ('/I'+$settings) $probe | Out-Null
         if($LASTEXITCODE){throw 'Actual FD Boot/App configuration check failed.'}
-        & cl /nologo /TC /Za /W4 /WX ("/DF24_DEVICE_"+$profile) (('/I')+(Join-Path $PSScriptRoot 'tools\tests\transfer_mock')) (('/I')+(Join-Path $PSScriptRoot 'common')) (('/I')+$PSScriptRoot) (Join-Path $PSScriptRoot 'tools\tests\fd_pair_can_tests.c') /Fe:fd_can_tests.exe
+        & cl /nologo /TC /Za /W4 /WX ("/DF24_DEVICE_"+$profile) (('/I')+(Join-Path $PSScriptRoot 'tools\tests\transfer_mock')) (('/I')+(Join-Path $PSScriptRoot 'hal\device')) (('/I')+$PSScriptRoot) (Join-Path $PSScriptRoot 'tools\tests\fd_pair_can_tests.c') /Fe:fd_can_tests.exe
         if($LASTEXITCODE -ne 0){throw 'FD HAL test build failed.'}
         & (Join-Path $output 'fd_can_tests.exe')
         if($LASTEXITCODE -ne 0){throw 'FD HAL test failed.'}
     }
     & cl @arguments @sources
     if($LASTEXITCODE -ne 0){throw 'C/C++ RAM helper test build failed.'}
-    & (Join-Path $output 'device_contract_tests.exe') (Join-Path $PSScriptRoot '..\RL78_F24_Boot_loader_CAN_FD_app\DefaultBuild\RL78_F24_Boot_loader_CAN_FD_app_update.bin')
+    & (Join-Path $output 'device_contract_tests.exe') (Join-Path $PSScriptRoot 'DefaultBuild\RL78_F24_Boot_loader_CAN_FD_app_update.bin')
     if($LASTEXITCODE -ne 0){throw 'C/C++ RAM helper tests failed.'}
 } finally { Pop-Location }

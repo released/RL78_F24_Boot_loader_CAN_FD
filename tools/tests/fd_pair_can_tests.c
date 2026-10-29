@@ -8,7 +8,7 @@
 #include "sw_crc32.c"
 #include "can_boot_block.inc"
 #include "device_app_vectors.h"
-#include "../../common/device_can.c"
+#include "device_can.c"
 volatile test_rules_t CAN_RXRULE_SFR;
 volatile test_ram_t CAN_RAM_MSG_SFR;
 volatile test_rxmb_ram_t CAN_RAM_RM_MSG_SFR;

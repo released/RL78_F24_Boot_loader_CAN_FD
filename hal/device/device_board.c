@@ -1,3 +1,8 @@
+/* Project/API reading notes: Board support for clocks, peripheral startup, timebase and
+ * diagnostic UART.
+ * Application/protocol work belongs to custom_func.c; interrupt handlers perform bounded
+ * hardware/event work and leave parsing/printing to the foreground.
+ */
 #include "platform.h"
 #include "r_cg_macrodriver.h"
 #include "Config_UART0.h"
@@ -35,6 +40,9 @@ void R_Systeminit(void)
     R_TAU0_Create();
 }
 #pragma interrupt Device_TimerIsr
+/* Service the hardware timebase/event source with bounded ISR work.
+ * Foreground code consumes the resulting timing state.
+ */
 void __near Device_TimerIsr(void)
 {
     ++g_tick;

@@ -1,3 +1,8 @@
+/* Project/API reading notes: Device-facing CAN adapter.
+ * Return complete frames with their physical channel, preserve bounded receive/diagnostic
+ * handling and report real TX completion.
+ * Boot/App/Transfer protocol work remains in foreground code.
+ */
 #include "platform.h"
 #include "device_board.h"
 #include "r_rscanfd_rl78_if.h"
@@ -181,6 +186,9 @@ volatile uint8_t g_device_rx_drops;
 #ifdef __CCRL__
 #pragma interrupt Device_CanRxIsr
 #endif
+/* Capture CAN receive data into the bounded service queues.
+ * Parsing and replies run later in foreground context.
+ */
 void __near Device_CanRxIsr(void)
 {
     volatile st_can_msgbuf_sfr_t CAN_NO_BIT_ACCESS *msg;

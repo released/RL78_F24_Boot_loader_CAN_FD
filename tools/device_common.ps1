@@ -1,8 +1,9 @@
+. (Join-Path $PSScriptRoot 'device_hal_paths.ps1')
 # Shared F24 CAN-device build contract. Windows PowerShell 5.1 / .NET only.
 . (Join-Path $PSScriptRoot 'app_config.ps1')
 $script:DeviceBoot = Split-Path -Parent $PSScriptRoot
 $script:DeviceConfig = (@('image_metadata_config.h','can_boot_config.h','boot_app_handoff.h') |
-    ForEach-Object { [IO.File]::ReadAllText((Join-Path $script:DeviceBoot $_)) }) -join "`n"
+    ForEach-Object { [IO.File]::ReadAllText((Get-DeviceProjectSource $script:DeviceBoot $_)) }) -join "`n"
 $script:DeviceConfig = [regex]::Replace($script:DeviceConfig, '(?s)/\*.*?\*/|//[^\r\n]*', '')
 function Require-Device($Condition, [string]$Message) { if (!$Condition) { throw $Message } }
 function Get-DeviceMacro([string]$Name) {

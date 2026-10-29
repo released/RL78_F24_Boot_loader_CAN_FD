@@ -1,3 +1,8 @@
+/* Project/API reading notes: CAN Boot protocol adapter.
+ * Validate frame length, command/state, metadata and update bounds before changing the session.
+ * Raw data acceptance, physical Flash completion and complete-image validation are separate
+ * stages.
+ */
 #include "r_cg_macrodriver.h"
 #include "r_cg_userdefine.h"
 #include "can_boot_transport.h"

@@ -1,3 +1,8 @@
+/* Project/API reading notes: Project-owned initialization and foreground work.
+ * The selected main/startup adapter calls hardware_init() once and loop() repeatedly.
+ * Keep application changes here so generated entry sources remain replaceable; lower-level APIs
+ * live in this project's hal directories.
+ */
 #include "platform.h"
 #include "device_board.h"
 #include "can_boot_transport.h"
@@ -5,6 +10,9 @@
 #include "sw_crc32.h"
 #include "device_app_vectors.h"
 
+/* Check the complete installed App before handoff: metadata/range, CRC trailer and the fixed App
+ * jump-table destinations must all pass.
+ */
 unsigned char CAN_BootInstalledValid(void)
 {
     unsigned long size;
@@ -25,6 +33,10 @@ unsigned char CAN_BootInstalledValid(void)
 
 static unsigned char g_custom_flash_status, g_custom_timed;
 
+/* Initialize the role selected by this project before foreground processing.
+ * Preserve clock, image/handoff and peripheral/IRQ enable order when adding application
+ * initialization.
+ */
 void hardware_init(void)
 {
     unsigned long request;
@@ -62,6 +74,10 @@ void hardware_init(void)
     g_custom_timed = (unsigned char)(valid && g_custom_timed);
 }
 
+/* Foreground service point called repeatedly by the selected main adapter.
+ * Keep protocol/application work and text logging bounded so pending traffic and deferred actions
+ * can continue.
+ */
 void loop(void)
 {
     signed long result;

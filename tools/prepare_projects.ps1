@@ -1,11 +1,13 @@
-param([ValidateSet('transfer','boot','app','all')][string]$Kind='all',
+﻿param([ValidateSet('transfer','boot','app','all')][string]$Kind='all',
       [string]$Project='', [switch]$CheckOnly, [switch]$ArtifactsOnly, [switch]$FunctionsOnly)
 $ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot 'device_hal_paths.ps1')
+
 . (Join-Path $PSScriptRoot 'device_common.ps1')
 . (Join-Path $PSScriptRoot 'public_project_paths.ps1')
 
 function Get-AppSources([string]$Folder) {
-    $paths=@((Join-Path $Folder 'custom_func.c'))+@(Get-ChildItem -LiteralPath (Join-Path $script:DeviceBoot 'common') -Filter '*.c' -File | ForEach-Object FullName)
+    $paths=@((Join-Path $Folder 'custom_func.c'))+@(Get-ChildItem -LiteralPath (Join-Path $script:DeviceBoot 'hal\device') -Filter '*.c' -File | ForEach-Object FullName)
     [xml]$xml=[IO.File]::ReadAllText((Get-DeviceProjectFile $Folder))
     foreach($node in $xml.SelectNodes('//Instance[Type="File"]')){
         $raw=[string]$node.RelativePath
@@ -110,29 +112,15 @@ function Prepare-DeviceProject([string]$ImageKind,[string]$Folder) {
     $vectors=Get-DeviceVectors $ImageKind $Folder
     $iodefine=Join-Path $Folder 'iodefine.h'
     Write-DeviceGenerated $iodefine (Convert-DeviceIodefineComment ([IO.File]::ReadAllText($iodefine))) -CheckOnly:$CheckOnly
-    $own=switch($ImageKind){
-        app {Get-AppSources $Folder}
-        boot {@('custom_func.c','can_boot_transport.c','sw_crc32.c','f24_flash.c') | ForEach-Object {Join-Path $Folder $_}}
-        transfer {@('custom_func.c','can_transfer_protocol.c') | ForEach-Object {Join-Path $Folder $_}}
-    }
-    $sources=@((Join-Path $Folder 'main.c'))+@($own)+@(Get-ChildItem -LiteralPath (Join-Path $script:DeviceBoot 'common') -Filter '*.c' -File | ForEach-Object FullName)
-    if($ImageKind -in @('boot','app')){
-        $sources+=@('image_metadata.c','image_metadata_profile.c') |
-            ForEach-Object {Join-Path $script:DeviceBoot $_}
-    }
-    $sources+=@(Get-ChildItem -LiteralPath (Join-Path $gen 'r_bsp') -Recurse -File | Where-Object Extension -in @('.c','.asm') | ForEach-Object FullName)
-    $sources+=@('Config_PORT\Config_PORT.c','Config_UART0\Config_UART0.c','Config_TAU0_1\Config_TAU0_1.c',
-        'general\r_cg_sau_common.c','general\r_cg_tau_common.c','r_pincfg\r_rscanfd_rl78_pinset.c',
-        'r_rscanfd_rl78\r_rscanfd_rl78.c') | ForEach-Object {Join-Path $gen $_}
-    if($ImageKind -eq 'boot'){
-        $sources+=@('source\common\r_rfd_common_api.c','source\common\r_rfd_common_control_api.c','source\common\r_rfd_common_get_api.c',
-            'source\codeflash\r_rfd_code_flash_api.c','userown\r_rfd_common_userown.c') | ForEach-Object {Join-Path (Join-Path $script:DeviceBoot 'RFDRL78T02') $_}
-    }
+    $sources=@($xml.SelectNodes('//Instance[Type="File"]') | ForEach-Object {
+        $relative=[string]$_.RelativePath
+        if([IO.Path]::GetExtension($relative) -in @('.c','.asm')){Join-Path $Folder $relative}
+    })
     $expected=@()
     foreach($path in @($sources | Sort-Object -Unique)){
         Require-Device (Test-Path -LiteralPath $path -PathType Leaf) ('Missing source '+$path)
         $target=$path
-        if([IO.Path]::GetFileName($path) -eq 'cstart.asm'){
+        if([IO.Path]::GetFileName($path) -eq 'cstart.asm' -and $path -notmatch '[\\/]generated_projection[\\/]'){
             $text=[IO.File]::ReadAllText($path).Replace("`r`n","`n")
             $text=$text.Replace('$IF (__RENESAS_VERSION__ < 0x01010000)  ; for CC-RL V1.00','$IF (1) ; Explicit stack')
             $text=$text.Replace('.DS     0x200','.DS     0x1000').Replace('__STACK_ADDR_START','_stacktop').Replace('__STACK_ADDR_END','_stackend')
@@ -193,68 +181,9 @@ function Prepare-DeviceProject([string]$ImageKind,[string]$Folder) {
         return
     }
     if($ArtifactsOnly){return}
-    $contractHeaders=@('image_metadata_config.h','image_metadata.h','can_boot_config.h','boot_app_handoff.h') |
-        ForEach-Object { Get-DeviceRelative (Join-Path $script:DeviceBoot $_) $Folder }
-    if($ImageKind -eq 'app') { $contractHeaders+=@('app_image_config.h','app_irq_handlers.h') }
-    if($ImageKind -eq 'boot') { $contractHeaders+=Get-DeviceRelative (Join-Path $script:DeviceBoot 'common\device_app_vectors.h') $Folder }
-    if($ImageKind -eq 'transfer') { $contractHeaders=@('transfer_diagnostics.h','can_transfer_config.h','can_transfer_protocol.h','custom_transfer_fd.h') }
-    if($ImageKind -in @('boot','app','transfer')) {
-        foreach($headerName in $contractHeaders) {
-            $node=$group.SelectSingleNode('Instance[Type="File" and RelativePath="'+$headerName+'"]')
-            if(!$node) {
-                $template=$group.SelectSingleNode('Instance[Type="File"]')
-                $node=$template.CloneNode($true);$node.SetAttribute('Guid',[guid]::NewGuid().ToString())
-                $node.SelectSingleNode('Name').InnerText=[IO.Path]::GetFileName($headerName)
-                $node.SelectSingleNode('RelativePath').InnerText=$headerName
-                $node.SelectSingleNode('TreeImageGuid').InnerText='03cad1e8-2eb3-4cde-a8a3-982423631122'
-                [void]$group.AppendChild($node)
-            }
-        }
-    }
-    $existing=@{}
-    foreach($node in @($group.SelectNodes('Instance[Type="File"]'))){
-        $name=[string]$node.RelativePath;$existing[$name]=$node
-        if([IO.Path]::GetExtension($name) -in @('.c','.asm') -and $name -notin $expected){[void]$group.RemoveChild($node)}
-    }
-    foreach($name in $expected){
-        if($existing.ContainsKey($name)){continue}
-        $node=$xml.CreateElement('Instance');$node.SetAttribute('Guid',[guid]::NewGuid().ToString())
-        foreach($pair in @(@('Name',[IO.Path]::GetFileName($name)),@('Type','File'),@('RelativePath',$name),
-            @('TreeImageGuid','941832c1-fc3b-4e1b-94e8-01ea17128b42'),@('ParentItem','76f247c0-0a47-461a-b088-233f5a2b5061'))){
-            $child=$xml.CreateElement($pair[0]);$child.InnerText=$pair[1];[void]$node.AppendChild($child)
-        }
-        [void]$group.AppendChild($node)
-    }
-    function Set-Option([string]$Key,[string]$Value){
-        $node=$root.SelectSingleNode('.//'+$Key);Require-Device ($null -ne $node) ('Missing MTPJ option '+$Key);$node.InnerText=$Value
-    }
-    $includes=@($Folder,$script:DeviceBoot,(Join-Path $script:DeviceBoot 'common'),(Join-Path $script:DeviceBoot 'RFDRL78T02\include'),(Join-Path $script:DeviceBoot 'RFDRL78T02\include\rfd'))
-    $includes+=@(Get-ChildItem -LiteralPath $gen -Recurse -Filter '*.h' -File | ForEach-Object DirectoryName | Sort-Object -Unique)
-    $includeText=(@($includes | ForEach-Object {Get-DeviceRelative $_ $Folder}) -join "`n")+"`n"
-    Set-Option 'COptionI-0' $includeText;Set-Option 'AsmOptionI-0' $includeText
-    Set-Option 'COptionPreinclude-0' ((Get-DeviceRelative (Join-Path $script:DeviceBoot 'common\f24_device_config.h') $Folder)+"`n")
-    Set-Option 'COptionD-0' ('F24_DEVICE_'+$ImageKind.ToUpperInvariant()+"`n")
-    foreach($key in @('COptionFarRom-0','COptionGoptimize-0','LinkOptionEntry-0','LinkOptionOptimizeSymbolDelete-0','LinkOptionShowSymbol-0','LinkOptionShowVector-0')){Set-Option $key 'True'}
-    Set-Option 'COptionLangC-0' 'C99';Set-Option 'COptionOsize-0' 'Default';Set-Option 'COptionOtherAdditionalOptions-0' '-Olite'
-    Set-Option 'LinkOptionOptimize-0' 'Custom';Set-Option 'LinkOptionEntryPoint-0' '_start';Set-Option 'LinkOptionAutoSectionLayout-0' 'False'
-    $code='.text,.RLIB,.SLIB,.textf,.constf,.data,.sdata,.init_array';$ram='.dataR,.stack_bss,.bss'
-    $rom=".data=.dataR`n.sdata=.sdataR`n"
-    if($ImageKind -eq 'boot'){
-        $code+=',RFD_DATA_n,RFD_CMN_f,RFD_CF_f,DRAM_f';$ram+=',RFD_DATA_nR,RFD_CMN_fR,RFD_CF_fR,DRAM_fR'
-        foreach($name in @('RFD_DATA_n','RFD_CMN_f','RFD_CF_f','DRAM_f')){$rom+="$name=${name}R`n"}
-    }
-    $start=Get-DeviceMacro IMAGE_APPLICATION_START
-    $layout=if($ImageKind -eq 'app'){('.app_vectors/{0:X5},' -f $start)+$code+('/{0:X5}' -f ($start+512))}else{$code+'/000F0'}
-    Set-Option 'LinkOptionStart-0' ($layout+','+$ram+'/F9F00,.sdataR,.sbss/FFE20');Set-Option 'LinkOptionRom-0' $rom
-    foreach($key in @('LinkOptionVect-0','LinkOptionVectN-0')){Set-Option $key ''}
-    foreach($key in @('LinkOptionUserOptByte-0','LinkOptionSecurityOptByte-0','LinkOptionOcdbg-0')){Set-Option $key $(if($ImageKind -eq 'app'){'False'}else{'True'})}
-    Set-DevicePublicProjectPaths $xml
-    Set-Option 'LinkOptionDebugMonitor-0' '3FF00-3FFFF';Set-Option 'HexOptionOutputFileName-0' '%ProjectName%.mot'
-    Set-Option 'PreBuildCommands-0' $pre;Set-Option 'PostBuildCommands-0' $post
-    $settings=New-Object Xml.XmlWriterSettings;$settings.Encoding=New-Object Text.UTF8Encoding($false);$settings.OmitXmlDeclaration=$true
-    $writer=[Xml.XmlWriter]::Create($mtpj,$settings)
-    try{$xml.Save($writer)}finally{$writer.Dispose()}
-    Write-Host "Prepared $ImageKind $mtpj"
+    Assert-DeviceLocalBindings $Folder
+    return
+
 }
 
 if($FunctionsOnly){return}
@@ -265,6 +194,6 @@ if($Kind -eq 'all'){
         Prepare-DeviceProject $item (Join-Path (Split-Path -Parent $script:DeviceBoot) $folder)
     }
 }else{
-    if(!$Project){$Project=switch($Kind){boot {$script:DeviceBoot} app {Join-Path $script:DeviceBoot '..\RL78_F24_Boot_loader_CAN_FD_app'} transfer {Join-Path $script:DeviceBoot '..\RL78_F24_CAN_FD_Transfer'}}}
+    if(!$Project){$Project=$script:DeviceBoot}
     Prepare-DeviceProject $Kind $Project
 }

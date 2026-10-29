@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "platform.h"
-#include "../../common/device_can.c"
+#include "device_can.c"
 volatile test_rules_t CAN_RXRULE_SFR;
 volatile test_ram_t CAN_RAM_MSG_SFR;
 volatile uint16_t GAFLCFG, CFDGRWC, GSTS, C0STSL, C0ERFLL, RFSTS0;
