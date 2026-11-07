@@ -47,3 +47,8 @@ QualityReport*.txt
 /.verify/
 /.env*
 !/.env.example
+
+# Derived Python helper bytecode
+__pycache__/
+*.pyc
+*.pyo
