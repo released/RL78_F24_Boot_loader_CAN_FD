@@ -110,7 +110,6 @@ Transfer tests,initial Boot programming and App->ENTER->update->APP_READY/live
 identity confirmation. The checked update has zero Host error-counter increases
 and a running UART counter. Long stress,queue-full and power/fault recovery
 remain separate acceptance items.
-See HANDOFF.md and SELF_CHECK.md for measured local results.
 
 ## User code entry
 
